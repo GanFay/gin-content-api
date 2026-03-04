@@ -9,12 +9,16 @@ import (
 func SetupRouter(h *handlers.Handler) *gin.Engine {
 	r := gin.Default()
 	r.GET("/ping", h.Ping)
-	r.POST("/posts", h.CreateBlog)
-	r.PUT("/posts/:id", h.UpdateBlog)
-	r.DELETE("/posts/:id", h.DeleteBlog)
-	r.GET("/posts", h.GetAllPosts)
-	r.GET("/posts/:id", h.GetPoID)
 	r.POST("/register", h.Register)
 	r.POST("/login", h.Login)
+
+	authGroup := r.Group("/")
+	authGroup.Use(h.AuthMiddleware())
+	authGroup.POST("/posts", h.CreateBlog)
+	authGroup.PUT("/posts/:id", h.UpdateBlog)
+	authGroup.DELETE("/posts/:id", h.DeleteBlog)
+	authGroup.GET("/posts", h.GetAllPosts)
+	authGroup.GET("/posts/:id", h.GetPoID)
+
 	return r
 }
