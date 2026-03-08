@@ -7,10 +7,21 @@ import (
 	"log"
 	"os"
 
+	_ "blog/docs"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
+// @title Blogging Platform API
+// @version 1.0
+// @description REST API for a blogging platform built with Go, Gin, PostgreSQL, JWT auth, refresh tokens and ownership protection.
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Println("No .env file found, using environment variables")

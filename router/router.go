@@ -4,14 +4,20 @@ import (
 	"blog/handlers"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRouter(h *handlers.Handler) *gin.Engine {
 	r := gin.Default()
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	r.GET("/ping", h.Ping)
-	r.POST("/register", h.Register)
-	r.POST("/login", h.Login)
-	r.GET("/refresh", h.Refresh)
+	r.POST("/auth/register", h.Register)
+	r.POST("/auth/login", h.Login)
+	r.GET("/auth/refresh", h.Refresh)
+	r.POST("/auth/logout", h.Logout)
 
 	authGroup := r.Group("/")
 	authGroup.Use(h.AuthMiddleware())
@@ -20,8 +26,8 @@ func SetupRouter(h *handlers.Handler) *gin.Engine {
 	authGroup.DELETE("/posts/:id", h.DeleteBlog)
 	authGroup.GET("/posts", h.GetAllPosts)
 	authGroup.GET("/posts/:id", h.GetPoID)
-	authGroup.POST("/logout", h.Logout)
-	authGroup.GET("/me", h.Me)
+
+	authGroup.GET("/users/me", h.Me)
 
 	return r
 }

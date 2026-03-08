@@ -10,6 +10,16 @@ type info struct {
 	Email    string `json:"email"`
 }
 
+// Me godoc
+// @Summary Get current user
+// @Description Returns information about the currently authenticated user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} info "User information"
+// @Failure 400 {object} map[string]string "Database error"
+// @Router /users/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	var req info
 	userID := c.GetInt("user_id")

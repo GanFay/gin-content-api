@@ -3,11 +3,24 @@ package handlers
 import (
 	"blog/auth"
 	"blog/models"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
+// Login godoc
+// @Summary Login user
+// @Description Authenticates user by username and password, returns access token and sets refresh token in HttpOnly cookie
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body models.Login true "Login credentials"
+// @Success 200 {object} map[string]string "Access token returned successfully"
+// @Failure 400 {object} map[string]string "Invalid request body or validation error"
+// @Failure 401 {object} map[string]string "Wrong password"
+// @Failure 500 {object} map[string]string "User does not exist or internal server error"
+// @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req models.Login
 	var user models.Users
@@ -64,6 +77,16 @@ func (h *Handler) Login(c *gin.Context) {
 	})
 }
 
+// Register godoc
+// @Summary Register user
+// @Description Creates a new user account with username, email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body models.RegisterRequest true "Register data"
+// @Success 201 {object} map[string]string "User registered successfully"
+// @Failure 400 {object} map[string]string "Validation error or insert error"
+// @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var req models.RegisterRequest
 	err := c.ShouldBindJSON(&req)
@@ -100,6 +123,15 @@ func (h *Handler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "register successfully"})
 }
 
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Generates a new access token using refresh token from HttpOnly cookie
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "New access token generated"
+// @Failure 401 {object} map[string]string "Missing or invalid refresh token"
+// @Router /auth/refresh [post]
 func (h *Handler) Refresh(c *gin.Context) {
 
 	refreshToken, err := c.Cookie("refresh_token")
@@ -122,6 +154,14 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 }
 
+// Logout godoc
+// @Summary Logout user
+// @Description Clears refresh token cookie and logs user out
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "User logged out successfully"
+// @Router /auth/logout [post]v
 func (h *Handler) Logout(c *gin.Context) {
 	c.SetCookie(
 		"refresh_token",

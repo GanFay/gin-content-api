@@ -8,6 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthMiddleware validates JWT access token from Authorization header.
+// Expected header format:
+//
+//	Authorization: Bearer <access_token>
+//
+// If token is valid, user_id is stored in Gin context.
 func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")

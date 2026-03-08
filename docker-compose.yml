@@ -14,8 +14,20 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U nigger -d mydb" ]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-
+  api:
+    build: .
+    container_name: blog_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: postgres://${PG_USER}:${PG_PASSWORD}@postgres:5432/${PG_DB}?sslmode=disable
+      APP_PORT: 8080
+      JWT_SECRET: ${SECRET_JWT}
+    ports:
+      - "8080:8080"

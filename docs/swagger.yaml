@@ -1,0 +1,408 @@
+basePath: /
+definitions:
+  handlers.info:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+  models.Blog:
+    properties:
+      category:
+        type: string
+      content:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+    type: object
+  models.Login:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for a blogging platform built with Go, Gin, PostgreSQL, JWT
+    auth, refresh tokens and ownership protection.
+  title: Blogging Platform API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user by username and password, returns access token
+        and sets refresh token in HttpOnly cookie
+      parameters:
+      - description: Login credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Access token returned successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Wrong password
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: User does not exist or internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Clears refresh token cookie and logs user out
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User logged out successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Logout user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generates a new access token using refresh token from HttpOnly
+        cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New access token generated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Missing or invalid refresh token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with username, email and password
+      parameters:
+      - description: Register data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Validation error or insert error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register user
+      tags:
+      - auth
+  /ping:
+    get:
+      description: Check if server is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Ping server
+      tags:
+      - utility
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of posts with optional search by term and pagination
+      parameters:
+      - description: Search term for title, content, or category
+        in: query
+        name: term
+        type: string
+      - default: 10
+        description: Number of posts to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of posts to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of posts
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Query error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all posts
+      tags:
+      - posts
+    post:
+      consumes:
+      - application/json
+      description: Creates a new blog post for the authenticated user
+      parameters:
+      - description: Blog data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.Blog'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Post created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to create blog
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new blog post
+      tags:
+      - posts
+  /posts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a post if the authenticated user is its author
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Post deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request or database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or no permission
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Post not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete blog post
+      tags:
+      - posts
+    get:
+      consumes:
+      - application/json
+      description: Returns a single post by its ID
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post found
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid post ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get post by ID
+      tags:
+      - posts
+    put:
+      consumes:
+      - application/json
+      description: Updates a post if the authenticated user is its author
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated blog data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.Blog'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or update failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized or no permission
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update blog post
+      tags:
+      - posts
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Returns information about the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User information
+          schema:
+            $ref: '#/definitions/handlers.info'
+        "400":
+          description: Database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
