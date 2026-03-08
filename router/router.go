@@ -11,6 +11,7 @@ func SetupRouter(h *handlers.Handler) *gin.Engine {
 	r.GET("/ping", h.Ping)
 	r.POST("/register", h.Register)
 	r.POST("/login", h.Login)
+	r.GET("/refresh", h.Refresh)
 
 	authGroup := r.Group("/")
 	authGroup.Use(h.AuthMiddleware())
@@ -19,6 +20,8 @@ func SetupRouter(h *handlers.Handler) *gin.Engine {
 	authGroup.DELETE("/posts/:id", h.DeleteBlog)
 	authGroup.GET("/posts", h.GetAllPosts)
 	authGroup.GET("/posts/:id", h.GetPoID)
+	authGroup.POST("/logout", h.Logout)
+	authGroup.GET("/me", h.Me)
 
 	return r
 }

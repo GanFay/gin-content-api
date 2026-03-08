@@ -27,6 +27,9 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 		err  error
 	)
 
+	limit := c.DefaultQuery("limit", "10")
+	offset := c.DefaultQuery("offset", "0")
+
 	if term != "" {
 		query := `
 			SELECT id, author_id, title, content, category, tags, created_at, updated_at
@@ -35,11 +38,12 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 				title ILIKE '%' || $1 || '%'
 				OR content ILIKE '%' || $1 || '%'
 				OR category ILIKE '%' || $1 || '%'
-			ORDER BY id DESC;
+			ORDER BY created_at DESC
+			LIMIT $3 OFFSET $4;
 		`
-		rows, err = h.DB.Query(c.Request.Context(), query, term)
+		rows, err = h.DB.Query(c.Request.Context(), query, term, limit, offset)
 	} else {
-		rows, err = h.DB.Query(c.Request.Context(), `SELECT posts.* FROM posts ORDER BY id DESC;`)
+		rows, err = h.DB.Query(c.Request.Context(), `SELECT posts.* FROM posts ORDER BY created_at DESC LIMIT $1 OFFSET $2;`, limit, offset)
 	}
 
 	if err != nil {

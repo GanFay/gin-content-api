@@ -48,13 +48,32 @@ func (h *Handler) Login(c *gin.Context) {
 		c.JSON(401, gin.H{"error": "wrong password"})
 		return
 	}
-	var token string
-	token, err = auth.GenerateJWT(user.ID)
+
+	var AccessToken string
+	AccessToken, err = auth.GenerateAccessJWT(user.ID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+
+	var RefreshToken string
+	RefreshToken, err = auth.GenerateRefreshJWT(user.ID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.SetCookie(
+		"refresh_token",
+		RefreshToken,
+		60*60*24*7,
+		"/",
+		"",
+		false,
+		true,
+	)
+
+	c.JSON(200, gin.H{
+		"access_token": AccessToken,
 	})
 }

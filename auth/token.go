@@ -10,10 +10,26 @@ import (
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-func GenerateJWT(userID int) (string, error) {
+func GenerateAccessJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"exp":     time.Now().Add(15 * time.Minute).Unix(),
+		"iat":     time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
+}
+
+func GenerateRefreshJWT(userID int) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
 		"iat":     time.Now().Unix(),
 	}
 
