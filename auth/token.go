@@ -2,12 +2,13 @@ package auth
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("zjROFrRoxxrD7yT7AysmjVZZ2mbXO3ACbOSTZnlGlSwUfPW76lJSVLYIBJo6SeIA")
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
@@ -22,7 +23,6 @@ func GenerateJWT(userID int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return signedToken, nil
 }
 

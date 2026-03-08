@@ -29,7 +29,7 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 
 	if term != "" {
 		query := `
-			SELECT id, title, content, category, tags, created_at, updated_at
+			SELECT id, author_id, title, content, category, tags, created_at, updated_at
 			FROM posts
 			WHERE
 				title ILIKE '%' || $1 || '%'
@@ -50,7 +50,7 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 	var posts []Post
 	for rows.Next() {
 		var p Post
-		if err := rows.Scan(&p.ID, &p.Title, &p.Content, &p.Category, &p.Tags, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.AuthorID, &p.Title, &p.Content, &p.Category, &p.Tags, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

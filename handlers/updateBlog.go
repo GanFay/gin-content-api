@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -19,8 +20,21 @@ func (h *Handler) UpdateBlog(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + idstr})
 	}
+	var post Post
+	err = h.DB.QueryRow(c.Request.Context(), `SELECT * FROM posts WHERE id=$1`, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.Category, &post.Tags, &post.CreatedAt, &post.UpdatedAt)
+	if err != nil {
+		log.Println(err)
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
 
-	if idstr != userID {
+	atoi, err := strconv.Atoi(post.AuthorID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid author id: " + post.AuthorID})
+		return
+	}
+
+	if atoi != userID {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "not permission"})
 		return
 	}
