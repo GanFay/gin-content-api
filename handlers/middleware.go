@@ -32,7 +32,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, prefix)
 
-		userID, err := auth.ParseJWT(tokenString)
+		userID, err := auth.ParseJWTAccess(tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()

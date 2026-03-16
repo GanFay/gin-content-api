@@ -27,7 +27,7 @@ func (h *Handler) Me(c *gin.Context) {
 	err := h.DB.QueryRow(c.Request.Context(), `SELECT id, username, email FROM users WHERE id=$1`, userID).Scan(&req.Id, &req.Username, &req.Email)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"message": err,
+			"message": err.Error(),
 		})
 		return
 	}

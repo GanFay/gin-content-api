@@ -8,7 +8,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+func getAccessSecret() []byte {
+	got := []byte(os.Getenv("JWT_SECRET_ACCESS"))
+	if len(got) == 0 {
+		return []byte("access_token")
+	}
+	return got
+}
+
+func getRefreshSecret() []byte {
+	got := []byte(os.Getenv("JWT_SECRET_REFRESH"))
+	if len(got) == 0 {
+		return []byte("refresh_token")
+	}
+	return got
+}
 
 func GenerateAccessJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
@@ -19,7 +33,7 @@ func GenerateAccessJWT(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(jwtSecret)
+	signedToken, err := token.SignedString(getAccessSecret())
 	if err != nil {
 		return "", err
 	}
@@ -35,19 +49,51 @@ func GenerateRefreshJWT(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(jwtSecret)
+	signedToken, err := token.SignedString(getRefreshSecret())
 	if err != nil {
 		return "", err
 	}
 	return signedToken, nil
 }
 
-func ParseJWT(signedToken string) (int, error) {
+func ParseJWTAccess(signedToken string) (int, error) {
 	token, err := jwt.Parse(signedToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return jwtSecret, nil
+		return getAccessSecret(), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if !token.Valid {
+		return 0, fmt.Errorf("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, fmt.Errorf("invalid claims")
+	}
+
+	userIDValue, ok := claims["user_id"]
+	if !ok {
+		return 0, fmt.Errorf("user_id not found")
+	}
+
+	userIDFloat, ok := userIDValue.(float64)
+	if !ok {
+		return 0, fmt.Errorf("invalid user_id type")
+	}
+
+	return int(userIDFloat), nil
+}
+
+func ParseJWTRefresh(signedToken string) (int, error) {
+	token, err := jwt.Parse(signedToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return getRefreshSecret(), nil
 	})
 	if err != nil {
 		return 0, err

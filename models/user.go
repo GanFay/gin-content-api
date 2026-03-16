@@ -20,3 +20,8 @@ type RegisterRequest struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
+
+type TestLoginResponse struct {
+	UserId      int    `json:"userId" binding:"required"`
+	AccessToken string `json:"access_token" binding:"required"`
+}

@@ -73,6 +73,7 @@ func (h *Handler) Login(c *gin.Context) {
 	)
 
 	c.JSON(200, gin.H{
+		"userId":       user.ID,
 		"access_token": AccessToken,
 	})
 }
@@ -140,7 +141,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
-	userID, err := auth.ParseJWT(refreshToken)
+	userID, err := auth.ParseJWTRefresh(refreshToken)
 	if err != nil {
 		c.JSON(401, gin.H{"error": "invalid refresh"})
 		return
