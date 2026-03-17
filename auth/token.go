@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func getAccessSecret() []byte {
+func GetAccessSecret() []byte {
 	got := []byte(os.Getenv("JWT_SECRET_ACCESS"))
 	if len(got) == 0 {
 		return []byte("access_token")
@@ -33,7 +33,7 @@ func GenerateAccessJWT(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(getAccessSecret())
+	signedToken, err := token.SignedString(GetAccessSecret())
 	if err != nil {
 		return "", err
 	}
@@ -61,7 +61,7 @@ func ParseJWTAccess(signedToken string) (int, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return getAccessSecret(), nil
+		return GetAccessSecret(), nil
 	})
 	if err != nil {
 		return 0, err

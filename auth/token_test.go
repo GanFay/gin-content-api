@@ -7,8 +7,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var userID = 5
+
 func TestAccessSecret(t *testing.T) {
-	if getAccessSecret() == nil {
+	if GetAccessSecret() == nil {
 		t.Fatal("getAccessSecret() returns nil.")
 	}
 }
@@ -19,7 +21,6 @@ func TestRefreshSecret(t *testing.T) {
 }
 
 func TestGenerateAccessJWT(t *testing.T) {
-	userID := 5
 
 	got, err := GenerateAccessJWT(userID)
 	if err != nil {
@@ -41,7 +42,6 @@ func TestGenerateAccessJWT(t *testing.T) {
 }
 
 func TestGenerateRefreshJWT(t *testing.T) {
-	userID := 5
 
 	got, err := GenerateRefreshJWT(userID)
 	if err != nil {
@@ -63,8 +63,7 @@ func TestGenerateRefreshJWT(t *testing.T) {
 }
 
 func TestParseAccessJWT_Valid(t *testing.T) {
-	userId := 5
-	jwt, err := GenerateAccessJWT(userId)
+	jwt, err := GenerateAccessJWT(userID)
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
@@ -72,14 +71,13 @@ func TestParseAccessJWT_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
-	if got != userId {
-		t.Fatal("got: ", got, "want: ", userId)
+	if got != userID {
+		t.Fatal("got: ", got, "want: ", userID)
 	}
 }
 
 func TestParseRefreshJWT_Valid(t *testing.T) {
-	userId := 5
-	jwt, err := GenerateRefreshJWT(userId)
+	jwt, err := GenerateRefreshJWT(userID)
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
@@ -87,8 +85,8 @@ func TestParseRefreshJWT_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
-	if got != userId {
-		t.Fatal("got: ", got, "want: ", userId)
+	if got != userID {
+		t.Fatal("got: ", got, "want: ", userID)
 	}
 }
 
@@ -116,8 +114,7 @@ func TestParseJWT_EmptyString(t *testing.T) {
 	}
 }
 func TestParseJWT_WrongSecret(t *testing.T) {
-	userId := 5
-	jwt, err := GenerateRefreshJWT(userId)
+	jwt, err := GenerateRefreshJWT(userID)
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
@@ -125,7 +122,7 @@ func TestParseJWT_WrongSecret(t *testing.T) {
 	if err == nil {
 		t.Fatal("message: error in JWT (another Secret match! Generate:Refresh, Parse: Access)")
 	}
-	jwt, err = GenerateAccessJWT(userId)
+	jwt, err = GenerateAccessJWT(userID)
 	if err != nil {
 		t.Fatal("message: ", err)
 	}
@@ -142,7 +139,7 @@ func TestParseJWT_MissingUserID(t *testing.T) {
 			"iat": time.Now().Unix(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString(getAccessSecret())
+		signedToken, err := token.SignedString(GetAccessSecret())
 		if err != nil {
 			return "", err
 		}
@@ -171,7 +168,7 @@ func TestParseJWT_MissingUserIDType(t *testing.T) {
 			"iat":     time.Now().Unix(),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString(getAccessSecret())
+		signedToken, err := token.SignedString(GetAccessSecret())
 		if err != nil {
 			return "", err
 		}

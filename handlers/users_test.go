@@ -2,34 +2,24 @@ package handlers
 
 import (
 	"blog/auth"
-	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func TestMe(t *testing.T) {
-	userID := 1
-	DBUrl := "postgres://app1:app@localhost:5432/db?sslmode=disable"
-	jwt, err := auth.GenerateAccessJWT(userID)
+func TestMe_Success(t *testing.T) {
+	h, r, pool := setupTest(t)
+	defer pool.Close()
+	hashPass, err := auth.HashPassword("test123")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	pool, err := pgxpool.New(context.Background(), DBUrl)
+	id := createTestUser(t, pool, "testMe", "testme@gmail.test", hashPass)
+	defer deleteTestUser(t, pool, id)
+	jwt, err := auth.GenerateAccessJWT(id)
 	if err != nil {
-		log.Fatal("Failed to connected DB: ", err)
+		t.Fatal(err)
 	}
-	defer pool.Close()
-	gin.SetMode(gin.TestMode)
-
-	h := &Handler{DB: pool}
-	r := gin.Default()
-
 	r.GET("/users/me", h.AuthMiddleware(), h.Me)
 	req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
 
@@ -39,5 +29,46 @@ func TestMe(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatal(w.Code)
 	}
+}
 
+func TestMe_Unauthorized(t *testing.T) {
+	h, r, pool := setupTest(t)
+	defer pool.Close()
+	hashPass, err := auth.HashPassword("test123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := createTestUser(t, pool, "testMe", "testme@gmail.test", hashPass)
+	defer deleteTestUser(t, pool, id)
+	jwt, err := auth.GenerateAccessJWT(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.GET("/users/me", h.AuthMiddleware(), h.Me)
+	req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
+
+	req.Header.Set("Authorization", "Bearer "+jwt+"awd")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatal(w.Code)
+	}
+}
+
+func TestMe_UserNotFound(t *testing.T) {
+	h, r, pool := setupTest(t)
+	defer pool.Close()
+	jwt, err := auth.GenerateAccessJWT(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.GET("/users/me", h.AuthMiddleware(), h.Me)
+	req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
+
+	req.Header.Set("Authorization", "Bearer "+jwt)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != 400 {
+		t.Fatal(w.Code, w.Body.String())
+	}
 }

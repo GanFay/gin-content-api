@@ -109,7 +109,7 @@ func (h *Handler) Register(c *gin.Context) {
 
 	hashPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
-		c.JSON(400, gin.H{"er	ror": err.Error()})
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -56,6 +56,36 @@ func deleteTestUser(t *testing.T, pool *pgxpool.Pool, id int) {
 	}
 }
 
+func TestLogin_InvalidJSON(t *testing.T) {
+	h, r, pool := setupTest(t)
+	defer pool.Close()
+
+	r.POST("/auth/register", h.Register)
+	body := `{
+	"user2name": "test_reg",
+	"emai2l": "testreg@test.com",
+	"passw2ord": "testreg123"
+}`
+	req := httptest.NewRequest(http.MethodPost, "/auth/register", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatal("invalid status code")
+	}
+	var bodyResponse map[string]string
+	err := json.Unmarshal(w.Body.Bytes(), &bodyResponse)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	if ok := strings.Contains(bodyResponse["error"], "failed on the 'required' tag"); ok != true {
+		t.Fatal(bodyResponse["error"], w.Code, "_____MUST BE JSON ERR____")
+	}
+}
+
 func TestRegister_Valid(t *testing.T) {
 	h, r, pool := setupTest(t)
 	defer pool.Close()
@@ -76,7 +106,6 @@ func TestRegister_Valid(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 
-	var userID int
 	err := h.DB.QueryRow(context.Background(), "SELECT id FROM users WHERE username=$1", "test_reg").Scan(&userID)
 	if err != nil {
 		t.Fatal(err)

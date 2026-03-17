@@ -23,6 +23,13 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		test := strings.Split(authHeader, " ")
+		if len(test) != 2 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid type header"})
+			c.Abort()
+			return
+		}
+
 		const prefix = "Bearer "
 		if !strings.HasPrefix(authHeader, prefix) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization format"})
@@ -34,7 +41,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 
 		userID, err := auth.ParseJWTAccess(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
