@@ -8,13 +8,8 @@ import (
 )
 
 func TestMe_Success(t *testing.T) {
-	h, r, pool := setupTest(t)
+	h, r, pool, id := setupTest(t)
 	defer pool.Close()
-	hashPass, err := auth.HashPassword("test123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	id := createTestUser(t, pool, "testMe", "testme@gmail.test", hashPass)
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)
 	if err != nil {
@@ -32,13 +27,8 @@ func TestMe_Success(t *testing.T) {
 }
 
 func TestMe_Unauthorized(t *testing.T) {
-	h, r, pool := setupTest(t)
+	h, r, pool, id := setupTest(t)
 	defer pool.Close()
-	hashPass, err := auth.HashPassword("test123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	id := createTestUser(t, pool, "testMe", "testme@gmail.test", hashPass)
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)
 	if err != nil {
@@ -56,8 +46,9 @@ func TestMe_Unauthorized(t *testing.T) {
 }
 
 func TestMe_UserNotFound(t *testing.T) {
-	h, r, pool := setupTest(t)
+	h, r, pool, id := setupTest(t)
 	defer pool.Close()
+	deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(-1)
 	if err != nil {
 		t.Fatal(err)

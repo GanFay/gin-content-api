@@ -17,6 +17,7 @@ func HashPassword(password string) (string, error) {
 func ComparePasswords(hashedPassword string, plainPassword string) bool {
 	byteHash := []byte(hashedPassword)
 	err := bcrypt.CompareHashAndPassword(byteHash, []byte(plainPassword))
+
 	if err != nil {
 		return false
 	}

@@ -16,7 +16,7 @@ func GetAccessSecret() []byte {
 	return got
 }
 
-func getRefreshSecret() []byte {
+func GetRefreshSecret() []byte {
 	got := []byte(os.Getenv("JWT_SECRET_REFRESH"))
 	if len(got) == 0 {
 		return []byte("refresh_token")
@@ -49,7 +49,7 @@ func GenerateRefreshJWT(userID int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err := token.SignedString(getRefreshSecret())
+	signedToken, err := token.SignedString(GetRefreshSecret())
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +93,7 @@ func ParseJWTRefresh(signedToken string) (int, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return getRefreshSecret(), nil
+		return GetRefreshSecret(), nil
 	})
 	if err != nil {
 		return 0, err

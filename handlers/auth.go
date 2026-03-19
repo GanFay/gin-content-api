@@ -45,7 +45,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 	if !auth.ComparePasswords(user.PasswordHash, req.Password) {
-		c.JSON(401, gin.H{"error": "password error"})
+		c.JSON(401, gin.H{"error": "password error" + err.Error()})
 		return
 	}
 
@@ -148,13 +148,13 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
-		c.JSON(401, gin.H{"message": "no refreshToken"})
+		c.JSON(401, gin.H{"message": err.Error()})
 		return
 	}
 
 	userID, err := auth.ParseJWTRefresh(refreshToken)
 	if err != nil {
-		c.JSON(401, gin.H{"error": "invalid refresh"})
+		c.JSON(401, gin.H{"error": err.Error()})
 		return
 	}
 

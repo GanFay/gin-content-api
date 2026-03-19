@@ -15,8 +15,8 @@ func TestAccessSecret(t *testing.T) {
 	}
 }
 func TestRefreshSecret(t *testing.T) {
-	if getRefreshSecret() == nil {
-		t.Fatal("getRefreshSecret() returns nil.")
+	if GetRefreshSecret() == nil {
+		t.Fatal("GetRefreshSecret() returns nil.")
 	}
 }
 
