@@ -11,12 +11,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// CreateBlog godoc
+// CreateBlog GoDoc
 // @Summary Create a new blog post
 // @Description Creates a new blog post for the authenticated user
 // @Tags posts
-// @Accept json
-// @Produce json
+// @Accept JSON
+// @Produce JSON
 // @Security BearerAuth
 // @Param input body models.Blog true "Blog data"
 // @Success 201 {object} map[string]string "Post created successfully"
@@ -28,34 +28,42 @@ func (h *Handler) CreateBlog(c *gin.Context) {
 	var newBlog models.Blog
 	err := c.ShouldBindJSON(&newBlog)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON can't unmarshal body"})
 		return
 	}
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not found, unauthorized"})
 		return
 	}
-	userIDstr := strconv.Itoa(userID.(int))
+	userIdStr := strconv.Itoa(userID.(int))
+	if len(newBlog.Title) < 3 || len(newBlog.Title) > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect title. It must be between 3 and 50 characters long."})
+		return
+	}
+	if len(newBlog.Content) < 3 || len(newBlog.Content) > 500 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Incorrect content. It must be between 3 and 500 characters long."})
+		return
+	}
 
 	_, err = h.DB.Exec(c.Request.Context(), `
 		INSERT INTO posts (author_id, title, content, category, tags)
 		VALUES ($1, $2, $3, $4, $5)
-	`, userIDstr, newBlog.Title, newBlog.Content, newBlog.Category, newBlog.Tags)
+	`, userIdStr, newBlog.Title, newBlog.Content, newBlog.Category, newBlog.Tags)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create blog: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to write in DB"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "post created successfully"})
 }
 
-// GetAllPosts godoc
+// GetAllPosts GoDoc
 // @Summary Get all posts
 // @Description Returns a list of posts with optional search by term and pagination
 // @Tags posts
-// @Accept json
-// @Produce json
+// @Accept JSON
+// @Produce JSON
 // @Param term query string false "Search term for title, content, or category"
 // @Param limit query int false "Number of posts to return" default(10)
 // @Param offset query int false "Number of posts to skip" default(0)
@@ -112,37 +120,37 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
-// GetPoID godoc
+// GetPoID GoDoc
 // @Summary Get post by ID
 // @Description Returns a single post by its ID
 // @Tags posts
-// @Accept json
-// @Produce json
+// @Accept JSON
+// @Produce JSON
 // @Param id path int true "Post ID"
 // @Success 200 {object} map[string]interface{} "Post found"
 // @Failure 400 {object} map[string]string "Invalid post ID"
 // @Router /posts/{id} [get]
 func (h *Handler) GetPoID(c *gin.Context) {
-	idstr := c.Param("id")
-	id, err := strconv.Atoi(idstr)
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + idstr})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + idStr})
 	}
 	var post models.Post
 	err = h.DB.QueryRow(c.Request.Context(), `SELECT * FROM posts WHERE id=$1`, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.Category, &post.Tags, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {
 		log.Println(err)
-		c.JSON(400, gin.H{"error": "invalid id: " + idstr})
+		c.JSON(400, gin.H{"error": "invalid id: " + idStr})
 	}
 	c.JSON(http.StatusOK, gin.H{"post": post})
 }
 
-// DeleteBlog godoc
+// DeleteBlog GoDoc
 // @Summary Delete blog post
 // @Description Deletes a post if the authenticated user is its author
 // @Tags posts
-// @Accept json
-// @Produce json
+// @Accept JSON
+// @Produce JSON
 // @Security BearerAuth
 // @Param id path int true "Post ID"
 // @Success 204 {object} map[string]string "Post deleted successfully"
@@ -189,12 +197,12 @@ func (h *Handler) DeleteBlog(c *gin.Context) {
 	c.JSON(204, gin.H{"message": "deleted post successfully"})
 }
 
-// UpdateBlog godoc
+// UpdateBlog GoDoc
 // @Summary Update blog post
 // @Description Updates a post if the authenticated user is its author
 // @Tags posts
-// @Accept json
-// @Produce json
+// @Accept JSON
+// @Produce JSON
 // @Security BearerAuth
 // @Param id path int true "Post ID"
 // @Param input body models.Blog true "Updated blog data"
@@ -203,15 +211,15 @@ func (h *Handler) DeleteBlog(c *gin.Context) {
 // @Failure 401 {object} map[string]string "Unauthorized or no permission"
 // @Router /posts/{id} [put]
 func (h *Handler) UpdateBlog(c *gin.Context) {
-	idstr := c.Param("id")
+	idStr := c.Param("id")
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not found"})
 		return
 	}
-	id, err := strconv.Atoi(idstr)
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + idstr})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id: " + idStr})
 	}
 	var post models.Post
 	err = h.DB.QueryRow(c.Request.Context(), `SELECT * FROM posts WHERE id=$1`, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.Category, &post.Tags, &post.CreatedAt, &post.UpdatedAt)
@@ -221,13 +229,13 @@ func (h *Handler) UpdateBlog(c *gin.Context) {
 		return
 	}
 
-	atoi, err := strconv.Atoi(post.AuthorID)
+	AtoI, err := strconv.Atoi(post.AuthorID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid author id: " + post.AuthorID})
 		return
 	}
 
-	if atoi != userID {
+	if AtoI != userID {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "not permission"})
 		return
 	}

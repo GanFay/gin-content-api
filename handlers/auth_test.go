@@ -22,8 +22,7 @@ type errorResponse struct {
 }
 
 // TODO: optimize setupTest - don't create user for tests that don't need it
-// TODO: optimize setupTest - don't create user for tests that don't need it
-// TODO: optimize setupTest - don't create user for tests that don't need it
+// TODO: fix all test where have - cookie (usually in refreshTests)
 
 func setupTest(t *testing.T) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
 	t.Helper()

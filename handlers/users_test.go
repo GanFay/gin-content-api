@@ -55,7 +55,6 @@ func TestMe_UserNotFound(t *testing.T) {
 	}
 	r.GET("/users/me", h.AuthMiddleware(), h.Me)
 	req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
-
 	req.Header.Set("Authorization", "Bearer "+jwt)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
