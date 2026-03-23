@@ -127,27 +127,28 @@ func TestCreateBlog_Validation(t *testing.T) {
 	}
 
 	for _, testCase := range testTable {
-		body := strings.NewReader(testCase.body)
-		req := httptest.NewRequest(http.MethodPost, "/posts", body)
-		req.Header.Set("Content-Type", "application/json")
-		if testCase.auth {
-			req.Header.Set("Authorization", "Bearer "+jwt)
-		}
-		w := httptest.NewRecorder()
-		r.ServeHTTP(w, req)
-		var resp map[string]string
-		err = json.Unmarshal(w.Body.Bytes(), &resp)
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-		if w.Code != testCase.code {
-			t.Fatal("test: ", testCase.testName, ", want: ", testCase.code, ", got: ", w.Code)
-		}
-		if resp["error"] != testCase.expected {
-			t.Fatal("test: ", testCase.testName, ", want: ", testCase.expected, ", got: ", resp["error"])
-		}
+		t.Run(testCase.testName, func(t *testing.T) {
+			body := strings.NewReader(testCase.body)
+			req := httptest.NewRequest(http.MethodPost, "/posts", body)
+			req.Header.Set("Content-Type", "application/json")
+			if testCase.auth {
+				req.Header.Set("Authorization", "Bearer "+jwt)
+			}
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+			var resp map[string]string
+			err = json.Unmarshal(w.Body.Bytes(), &resp)
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			if w.Code != testCase.code {
+				t.Fatal("test: ", testCase.testName, ", want: ", testCase.code, ", got: ", w.Code)
+			}
+			if resp["error"] != testCase.expected {
+				t.Fatal("test: ", testCase.testName, ", want: ", testCase.expected, ", got: ", resp["error"])
+			}
+		})
 	}
-
 }
 
 func TestCreateBlog_Success(t *testing.T) {
@@ -190,28 +191,11 @@ func TestCreateBlog_Success(t *testing.T) {
 	}
 }
 
-func TestGetAllPosts_DefaultPagination(t *testing.T) {
-	h, r, p, id := setupTest(t)
+func TestGetAllPosts_Validation(t *testing.T) {
+	_, _, p, id := setupTest(t)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	jwt, err := auth.GenerateAccessJWT(id)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	testTable := []struct {
-		name     string
-		req      gin.IRoutes
-		reqtest  *http.Request
-		expected string
-		code     int
-	}{
-		{
-			name:    "DefaultPagination",
-			req:     r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts),
-			reqtest: httptest.NewRequest(http.MethodGet, "/posts", nil),
-		},
-	}
-
 	strID := strconv.Itoa(id)
 	postsID, err := createBlogH(t, p, strID, 12)
 	if err != nil {
@@ -219,23 +203,80 @@ func TestGetAllPosts_DefaultPagination(t *testing.T) {
 	}
 	defer deletePostsH(t, p, postsID)
 
-	r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
-
-	req := httptest.NewRequest(http.MethodGet, "/posts", nil)
-	req.Header.Set("Authorization", "Bearer "+jwt)
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	var posts map[string][]models.Post
-	err = json.Unmarshal(w.Body.Bytes(), &posts)
-	if err != nil {
-		t.Fatal(err.Error())
+	testTable := []struct {
+		name        string
+		req         func(r *gin.Engine, h *Handler)
+		reqTest     *http.Request
+		wantLen     int
+		wantBodyErr string
+		wantCode    int
+		auth        bool
+	}{
+		{
+			name: "DefaultPagination",
+			req: func(r *gin.Engine, h *Handler) {
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+			},
+			reqTest:     httptest.NewRequest(http.MethodGet, "/posts", nil),
+			wantLen:     10,
+			wantBodyErr: "",
+			wantCode:    http.StatusOK,
+			auth:        true,
+		},
+		{
+			name: "WithSearchTerm",
+			req: func(r *gin.Engine, h *Handler) {
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+			},
+			reqTest:     httptest.NewRequest(http.MethodGet, `/posts?term=title`, nil),
+			wantLen:     -1,
+			wantBodyErr: "",
+			wantCode:    http.StatusOK,
+			auth:        true,
+		},
+		{
+			name: "InvalidLimit",
+			req: func(r *gin.Engine, h *Handler) {
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+			},
+			reqTest:     httptest.NewRequest(http.MethodGet, "/posts?limit=1000", nil),
+			wantLen:     -1,
+			wantBodyErr: "limit is too big",
+			wantCode:    http.StatusBadRequest,
+			auth:        true,
+		},
 	}
+	for _, testCase := range testTable {
+		t.Run(testCase.name, func(t *testing.T) {
+			h, r, _, id_2 := setupTest(t)
+			deleteTestUser(t, p, id_2)
+			testCase.req(r, h)
+			w := httptest.NewRecorder()
+			if testCase.auth {
+				testCase.reqTest.Header.Set("Authorization", "Bearer "+jwt)
+			}
+			r.ServeHTTP(w, testCase.reqTest)
+			if testCase.wantBodyErr == "" {
+				var posts map[string][]models.Post
+				err = json.Unmarshal(w.Body.Bytes(), &posts)
+				if len(posts["posts"]) != testCase.wantLen && testCase.wantLen != -1 {
+					t.Fatal("wrong pagination len")
+				}
+			} else {
+				var posts map[string]string
+				err = json.Unmarshal(w.Body.Bytes(), &posts)
+				if posts["error"] != testCase.wantBodyErr {
 
-	if w.Code != http.StatusOK {
-		t.Fatal("want: ", http.StatusOK, ", got: ", w.Code)
-	}
+					t.Fatal("wrong error body", w.Code, w.Body.String())
+				}
+			}
+			if err != nil {
+				t.Fatal(err.Error())
+			}
+			if w.Code != testCase.wantCode {
+				t.Fatal("want: ", testCase.wantCode, ", got: ", w.Code)
+			}
+		})
 
-	if len(posts["posts"]) != 10 {
-		t.Fatal("wrong pagination len")
 	}
 }

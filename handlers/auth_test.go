@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -41,9 +42,19 @@ func setupTest(t *testing.T) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	id := createTestUser(t, pool, "test_logout", "test_logout@gmail.com", pass)
 
-	return h, r, pool, id
+	for i := 0; i < 50; i++ {
+
+		username := "test_logout" + strconv.Itoa(i)
+		email := "test_logout@gmail.com" + strconv.Itoa(i)
+
+		id, err := createTestUser(t, pool, username, email, pass)
+		if err == nil {
+			return h, r, pool, id
+		}
+	}
+	t.Fatal(err.Error())
+	return nil, nil, pool, 0
 }
 
 func performJSONRequest(r http.Handler, method, path, body string) *httptest.ResponseRecorder {
@@ -68,7 +79,7 @@ func decodeJSON[T any](t *testing.T, w *httptest.ResponseRecorder) T {
 	return v
 }
 
-func createTestUser(t *testing.T, pool *pgxpool.Pool, username, email, passwordHash string) int {
+func createTestUser(t *testing.T, pool *pgxpool.Pool, username, email, passwordHash string) (int, error) {
 	t.Helper()
 
 	var id int
@@ -79,11 +90,8 @@ func createTestUser(t *testing.T, pool *pgxpool.Pool, username, email, passwordH
 		 RETURNING id`,
 		username, email, passwordHash,
 	).Scan(&id)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 
-	return id
+	return id, err
 }
 
 func deleteTestUser(t *testing.T, pool *pgxpool.Pool, id int) {
@@ -183,18 +191,18 @@ func TestRegister_Validation(t *testing.T) {
 			w := performJSONRequest(r, http.MethodPost, "/auth/register", tt.body)
 
 			if w.Code != tt.wantStatus {
-				t.Fatalf("expected status %d, got %d, body: %s", tt.wantStatus, w.Code, w.Body.String())
+				t.Fatalf("wantLen status %d, got %d, body: %s", tt.wantStatus, w.Code, w.Body.String())
 			}
 
 			resp := decodeJSON[errorResponse](t, w)
 
 			if tt.notEmptyError && resp.Error == "" {
-				t.Fatal("expected non-empty error")
+				t.Fatal("wantLen non-empty error")
 			}
 
 			for _, want := range tt.wantContains {
 				if !strings.Contains(resp.Error, want) {
-					t.Fatalf("expected error to contain %q, got %q", want, resp.Error)
+					t.Fatalf("wantLen error to contain %q, got %q", want, resp.Error)
 				}
 			}
 		})
@@ -215,7 +223,10 @@ func TestRegister_UserAlreadyExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	id = createTestUser(t, pool, username, email, passwordHash)
+	id, err = createTestUser(t, pool, username, email, passwordHash)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	defer deleteTestUser(t, pool, id)
 
 	r.POST("/auth/register", h.Register)
@@ -229,13 +240,13 @@ func TestRegister_UserAlreadyExists(t *testing.T) {
 	w := performJSONRequest(r, http.MethodPost, "/auth/register", body)
 
 	if w.Code != http.StatusConflict {
-		t.Fatalf("expected status %d, got %d, body: %s", http.StatusConflict, w.Code, w.Body.String())
+		t.Fatalf("wantLen status %d, got %d, body: %s", http.StatusConflict, w.Code, w.Body.String())
 	}
 
 	resp := decodeJSON[errorResponse](t, w)
 
 	if !strings.Contains(resp.Error, "SQLSTATE 23505") {
-		t.Fatalf("expected duplicate key error, got: %q", resp.Error)
+		t.Fatalf("wantLen duplicate key error, got: %q", resp.Error)
 	}
 }
 
@@ -259,7 +270,7 @@ func TestRegister_Success(t *testing.T) {
 	w := performJSONRequest(r, http.MethodPost, "/auth/register", body)
 
 	if w.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d, body: %s", http.StatusCreated, w.Code, w.Body.String())
+		t.Fatalf("wantLen status %d, got %d, body: %s", http.StatusCreated, w.Code, w.Body.String())
 	}
 
 	var userID int
@@ -322,13 +333,13 @@ func TestLogin_Validation(t *testing.T) {
 			w := performJSONRequest(r, http.MethodPost, "/auth/login", tt.body)
 
 			if w.Code != tt.wantStatus {
-				t.Fatalf("expected status %d, got %d, body: %s", tt.wantStatus, w.Code, w.Body.String())
+				t.Fatalf("wantLen status %d, got %d, body: %s", tt.wantStatus, w.Code, w.Body.String())
 			}
 
 			resp := decodeJSON[errorResponse](t, w)
 
 			if resp.Error != tt.wantError {
-				t.Fatalf("expected error %q, got %q", tt.wantError, resp.Error)
+				t.Fatalf("wantLen error %q, got %q", tt.wantError, resp.Error)
 			}
 		})
 	}
@@ -352,7 +363,7 @@ func TestLogin_Success(t *testing.T) {
 	w := performJSONRequest(r, http.MethodPost, "/auth/login", body)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
+		t.Fatalf("wantLen status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
 	}
 
 	resp := decodeJSON[models.TestLoginResponse](t, w)
@@ -363,7 +374,7 @@ func TestLogin_Success(t *testing.T) {
 	}
 
 	if userIDAccessJWT != id {
-		t.Fatalf("wrong access token user id: expected %d, got %d", id, userIDAccessJWT)
+		t.Fatalf("wrong access token user id: wantLen %d, got %d", id, userIDAccessJWT)
 	}
 
 	cookies := w.Header()["Set-Cookie"]
@@ -384,7 +395,7 @@ func TestLogin_Success(t *testing.T) {
 	}
 
 	if userIDRefreshJWT != id {
-		t.Fatalf("wrong refresh token user id: expected %d, got %d", id, userIDRefreshJWT)
+		t.Fatalf("wrong refresh token user id: wantLen %d, got %d", id, userIDRefreshJWT)
 	}
 }
 
@@ -403,7 +414,7 @@ func TestLogin_Invalid(t *testing.T) {
 	w := performJSONRequest(r, http.MethodPost, "/auth/login", body)
 
 	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d, body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		t.Fatalf("wantLen status %d, got %d, body: %s", http.StatusBadRequest, w.Code, w.Body.String())
 	}
 }
 
@@ -439,10 +450,10 @@ func TestRefresh_NoCookie(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Fatal("expected status 401, got", w.Code, w.Body.String())
+		t.Fatal("wantLen status 401, got", w.Code, w.Body.String())
 	}
 	if w.Body.String() != `{"message":"http: named cookie not present"}` {
-		t.Fatal("expected no refreshToken, got", w.Body.String())
+		t.Fatal("wantLen no refreshToken, got", w.Body.String())
 	}
 }
 
@@ -456,10 +467,10 @@ func TestRefresh_InvalidToken(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusUnauthorized {
-		t.Fatal("expected status 401, got", w.Code, w.Body.String())
+		t.Fatal("wantLen status 401, got", w.Code, w.Body.String())
 	}
 	if w.Body.String() != `{"message":"http: named cookie not present"}` {
-		t.Fatal("expected no refreshToken, got", w.Body.String())
+		t.Fatal("wantLen no refreshToken, got", w.Body.String())
 	}
 }
 
@@ -491,7 +502,7 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusUnauthorized {
-		t.Fatal("expected status 401, got", w.Code, w.Body.String())
+		t.Fatal("wantLen status 401, got", w.Code, w.Body.String())
 	}
 	var resp map[string]string
 	err = json.Unmarshal(w.Body.Bytes(), &resp)
@@ -532,7 +543,7 @@ func TestRefresh_UserID_NotFound(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	if w.Code != http.StatusUnauthorized {
-		t.Fatal("expected status 401, got", w.Code, w.Body.String())
+		t.Fatal("wantLen status 401, got", w.Code, w.Body.String())
 	}
 	if resp["error"] != "user_id not found" {
 		t.Fatal("want: user_id not found. got: " + resp["error"])
@@ -558,7 +569,7 @@ func TestRefresh_Success(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	if w.Code != http.StatusOK {
-		t.Fatal("expected status 200, got", w.Code, w.Body.String())
+		t.Fatal("wantLen status 200, got", w.Code, w.Body.String())
 	}
 	if resp["access_token"] == "" {
 		t.Fatal("want: access_token")

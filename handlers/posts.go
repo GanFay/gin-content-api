@@ -81,13 +81,18 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 
 	limit := c.DefaultQuery("limit", "10")
 	offset := c.DefaultQuery("offset", "0")
-	if limit > "99" {
+
+	intLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+	}
+	if intLimit > 99 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit is too big"})
 		return
 	}
 
 	if term != "" {
-		query := `
+		rows, err = h.DB.Query(c.Request.Context(), `
 			SELECT id, author_id, title, content, category, tags, created_at, updated_at
 			FROM posts
 			WHERE
@@ -95,9 +100,8 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 				OR content ILIKE '%' || $1 || '%'
 				OR category ILIKE '%' || $1 || '%'
 			ORDER BY created_at DESC
-			LIMIT $3 OFFSET $4;
-		`
-		rows, err = h.DB.Query(c.Request.Context(), query, term, limit, offset)
+			LIMIT $2 OFFSET $3;
+		`, term, limit, offset)
 	} else {
 		rows, err = h.DB.Query(c.Request.Context(), `SELECT posts.* FROM posts ORDER BY created_at DESC LIMIT $1 OFFSET $2;`, limit, offset)
 	}
