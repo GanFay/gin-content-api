@@ -81,6 +81,10 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 
 	limit := c.DefaultQuery("limit", "10")
 	offset := c.DefaultQuery("offset", "0")
+	if limit > "99" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit is too big"})
+		return
+	}
 
 	if term != "" {
 		query := `
