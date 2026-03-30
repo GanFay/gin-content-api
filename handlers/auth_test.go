@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -43,18 +42,12 @@ func setupTest(t *testing.T) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
 		t.Fatal(err.Error())
 	}
 
-	for i := 0; i < 50; i++ {
+	username := "test_logout"
+	email := "test_logout@gmail.com"
 
-		username := "test_logout" + strconv.Itoa(i)
-		email := "test_logout@gmail.com" + strconv.Itoa(i)
+	id, _ := createTestUser(t, pool, username, email, pass)
 
-		id, err := createTestUser(t, pool, username, email, pass)
-		if err == nil {
-			return h, r, pool, id
-		}
-	}
-	t.Fatal(err.Error())
-	return nil, nil, pool, 0
+	return h, r, pool, id
 }
 
 func performJSONRequest(r http.Handler, method, path, body string) *httptest.ResponseRecorder {
@@ -363,7 +356,7 @@ func TestLogin_Success(t *testing.T) {
 	w := performJSONRequest(r, http.MethodPost, "/auth/login", body)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("wantLen status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
+		t.Fatalf("status %d, got %d, body: %s", http.StatusOK, w.Code, w.Body.String())
 	}
 
 	resp := decodeJSON[models.TestLoginResponse](t, w)
