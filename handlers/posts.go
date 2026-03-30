@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// CreateBlog GoDoc
+// CreatePost GoDoc
 // @Summary Create a new blog post
 // @Description Creates a new blog post for the authenticated user
 // @Tags posts
@@ -24,7 +24,7 @@ import (
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Failed to create blog"
 // @Router /posts [post]
-func (h *Handler) CreateBlog(c *gin.Context) {
+func (h *Handler) CreatePost(c *gin.Context) {
 	var newBlog models.Blog
 	err := c.ShouldBindJSON(&newBlog)
 	if err != nil {
@@ -58,7 +58,7 @@ func (h *Handler) CreateBlog(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "post created successfully"})
 }
 
-// GetAllPosts GoDoc
+// GetPosts GoDoc
 // @Summary Get all posts
 // @Description Returns a list of posts with optional search by term and pagination
 // @Tags posts
@@ -71,7 +71,7 @@ func (h *Handler) CreateBlog(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Query error"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /posts [get]
-func (h *Handler) GetAllPosts(c *gin.Context) {
+func (h *Handler) GetPosts(c *gin.Context) {
 	term := c.Query("term")
 
 	var (
@@ -129,7 +129,7 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
-// GetPoID GoDoc
+// GetByID GoDoc
 // @Summary Get post by ID
 // @Description Returns a single post by its ID
 // @Tags posts
@@ -139,7 +139,7 @@ func (h *Handler) GetAllPosts(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "Post found"
 // @Failure 400 {object} map[string]string "Invalid post ID"
 // @Router /posts/{id} [get]
-func (h *Handler) GetPoID(c *gin.Context) {
+func (h *Handler) GetByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -157,7 +157,7 @@ func (h *Handler) GetPoID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"posts": posts})
 }
 
-// DeleteBlog GoDoc
+// DeletePost GoDoc
 // @Summary Delete blog post
 // @Description Deletes a post if the authenticated user is its author
 // @Tags posts
@@ -170,7 +170,7 @@ func (h *Handler) GetPoID(c *gin.Context) {
 // @Failure 401 {object} map[string]string "Unauthorized or no permission"
 // @Failure 404 {object} map[string]string "Post not found"
 // @Router /posts/{id} [delete]
-func (h *Handler) DeleteBlog(c *gin.Context) {
+func (h *Handler) DeletePost(c *gin.Context) {
 
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -213,7 +213,7 @@ func (h *Handler) DeleteBlog(c *gin.Context) {
 	c.JSON(204, gin.H{"message": "deleted post successfully"})
 }
 
-// UpdateBlog GoDoc
+// UpdatePost GoDoc
 // @Summary Update blog post
 // @Description Updates a post if the authenticated user is its author
 // @Tags posts
@@ -226,7 +226,7 @@ func (h *Handler) DeleteBlog(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input or update failed"
 // @Failure 401 {object} map[string]string "Unauthorized or no permission"
 // @Router /posts/{id} [put]
-func (h *Handler) UpdateBlog(c *gin.Context) {
+func (h *Handler) UpdatePost(c *gin.Context) {
 	idStr := c.Param("id")
 	userID, exists := c.Get("user_id")
 	if !exists {

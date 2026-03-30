@@ -23,7 +23,7 @@ func TestDeletePost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	r.DELETE(`/posts/:id`, h.AuthMiddleware(), h.DeleteBlog)
+	r.DELETE(`/posts/:id`, h.AuthMiddleware(), h.DeletePost)
 
 	testTable := []struct {
 		name        string
@@ -112,7 +112,7 @@ func TestDeletePost_NoAuthor(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	r.DELETE(`/posts/:id`, h.AuthMiddleware(), h.DeleteBlog)
+	r.DELETE(`/posts/:id`, h.AuthMiddleware(), h.DeletePost)
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf(`/posts/%d`, IDs[0]), nil)
 	req.Header.Set("Authorization", "Bearer "+jwt)
 	w := httptest.NewRecorder()

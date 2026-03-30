@@ -24,7 +24,7 @@ func TestUpdatePosts_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	r.PUT(`/posts/:id`, h.AuthMiddleware(), h.UpdateBlog)
+	r.PUT(`/posts/:id`, h.AuthMiddleware(), h.UpdatePost)
 	TestTable := []struct {
 		name        string
 		body        string
@@ -167,7 +167,7 @@ func TestUpdateBlog_NotOwner(t *testing.T) {
 						"tags": ["test1", "test2"]
 					}`
 
-	r.PUT(`/posts/:id`, h.AuthMiddleware(), h.UpdateBlog)
+	r.PUT(`/posts/:id`, h.AuthMiddleware(), h.UpdatePost)
 	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/posts/%d", IDs[0]), strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+jwt)
 	w := httptest.NewRecorder()

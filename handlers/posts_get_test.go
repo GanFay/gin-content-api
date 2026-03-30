@@ -37,7 +37,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "DefaultPagination",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts", nil),
 			wantLen:     10,
@@ -48,7 +48,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "WithSearchTerm",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, `/posts?term=title`, nil),
 			wantLen:     -1,
@@ -59,7 +59,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "InvalidLenLimit",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts?limit=1000", nil),
 			wantLen:     -1,
@@ -70,7 +70,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "InvalidLimit",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts?limit=qwerty12345", nil),
 			wantLen:     -1,
@@ -81,7 +81,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "InvalidOffset",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts?offset=qwerty12345", nil),
 			wantLen:     -1,
@@ -92,7 +92,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "Success_EmptyList",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts?offset=99999999", nil),
 			wantLen:     0,
@@ -103,7 +103,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "NoAuth",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts`, h.AuthMiddleware(), h.GetAllPosts)
+				r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, "/posts", nil),
 			wantLen:     -1,
@@ -114,7 +114,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "ID_Success",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetPoID)
+				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetByID)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, fmt.Sprintf("/posts/%d", postsID[0]), nil),
 			wantLen:     -1,
@@ -125,7 +125,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "ID_Invalid_ID",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetPoID)
+				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetByID)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, fmt.Sprintf("/posts/%f", 9.5), nil),
 			wantLen:     -1,
@@ -136,7 +136,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 		{
 			name: "ID_UserNotFound",
 			req: func(r *gin.Engine, h *Handler) {
-				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetPoID)
+				r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetByID)
 			},
 			reqTest:     httptest.NewRequest(http.MethodGet, fmt.Sprintf("/posts/%d", 2147483647), nil),
 			wantLen:     -1,

@@ -63,7 +63,7 @@ func TestCreateBlog_Validation(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	r.POST("/posts", h.AuthMiddleware(), h.CreateBlog)
+	r.POST("/posts", h.AuthMiddleware(), h.CreatePost)
 
 	testTable := []struct {
 		testName string
@@ -156,7 +156,7 @@ func TestCreateBlog_Success(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	r.POST("/posts", h.AuthMiddleware(), h.CreateBlog)
+	r.POST("/posts", h.AuthMiddleware(), h.CreatePost)
 
 	body := `{
 		"title": "Test",
