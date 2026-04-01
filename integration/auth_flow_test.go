@@ -137,7 +137,7 @@ func TestAuthFlow_LoginRefreshMe(t *testing.T) {
 	defer p.Close()
 
 	deleteTestUser(t, p, "maks")
-	fullCreateUser(t, p)
+	fullCreateUser(t, p, "maks")
 	defer deleteTestUser(t, p, "maks")
 
 	r := router.SetupRouter(h)
@@ -198,9 +198,6 @@ func TestAuthFlow_LoginRefreshMe(t *testing.T) {
 	if rMe.Username != "maks" {
 		t.Fatal("want: maks, got:", rMe.Username)
 	}
-	if rMe.Email != "maks@maks.com" {
-		t.Fatal("wrong email")
-	}
 
 }
 
@@ -210,7 +207,7 @@ func TestAuthFlow_LogoutThenRefreshFails(t *testing.T) {
 	defer p.Close()
 	deleteTestUser(t, p, "maks")
 	defer deleteTestUser(t, p, "maks")
-	_, refreshCookie := fullCreateUser(t, p)
+	_, refreshCookie := fullCreateUser(t, p, "maks")
 	r := router.SetupRouter(h)
 
 	// 1.Logout

@@ -77,6 +77,12 @@ func TestSetupRouter_PublicAuthRoutesAccessible(t *testing.T) {
 			path:   "/auth/logout",
 			body:   "",
 		},
+		{
+			name:   "get posts exists",
+			method: http.MethodGet,
+			path:   "/posts",
+			body:   "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -104,8 +110,6 @@ func TestSetupRouter_ProtectedRoutesRequireAuth(t *testing.T) {
 		method string
 		path   string
 	}{
-		{"get posts", http.MethodGet, "/posts"},
-		{"get post by id", http.MethodGet, "/posts/1"},
 		{"create post", http.MethodPost, "/posts"},
 		{"update post", http.MethodPut, "/posts/1"},
 		{"delete post", http.MethodDelete, "/posts/1"},

@@ -18,14 +18,14 @@ func SetupRouter(h *handlers.Handler) *gin.Engine {
 	r.POST("/auth/login", h.Login)
 	r.GET("/auth/refresh", h.Refresh)
 	r.POST("/auth/logout", h.Logout)
+	r.GET("/posts", h.GetPosts)
+	r.GET("/posts/:id", h.GetByID)
 
 	authGroup := r.Group("/")
 	authGroup.Use(h.AuthMiddleware())
 	authGroup.POST("/posts", h.CreatePost)
 	authGroup.PUT("/posts/:id", h.UpdatePost)
 	authGroup.DELETE("/posts/:id", h.DeletePost)
-	authGroup.GET("/posts", h.GetPosts)
-	authGroup.GET("/posts/:id", h.GetByID)
 
 	authGroup.GET("/users/me", h.Me)
 
