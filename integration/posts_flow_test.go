@@ -50,9 +50,12 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 	h, p := setupTest(t)
 	defer p.Close()
 	r := router.SetupRouter(h)
-	deleteTestUser(t, p, "maks")
-	jwt, _ := fullCreateUser(t, p, "maks")
-	defer deleteTestUser(t, p, "maks")
+	deleteTestUser(t, p, "maks1")
+	deleteTestUser(t, p, "maks2")
+	jwt1, _ := fullCreateUser(t, p, "maks1")
+	jwt2, _ := fullCreateUser(t, p, "maks2")
+	defer deleteTestUser(t, p, "maks1")
+	defer deleteTestUser(t, p, "maks2")
 	deletePost(t, p, "test_flow_1")
 	deletePost(t, p, "test_flow_2")
 
@@ -71,7 +74,7 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 
 	// 1. Create
 	req := httptest.NewRequest(http.MethodPost, "/posts", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+jwt)
+	req.Header.Set("Authorization", "Bearer "+jwt1)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -97,7 +100,7 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 	postID := respGet["posts"][0].ID
 	// 3. Update
 	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf(`/posts/%d`, postID), strings.NewReader(updBody))
-	req.Header.Set("Authorization", "Bearer "+jwt)
+	req.Header.Set("Authorization", "Bearer "+jwt1)
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
 
@@ -109,10 +112,35 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 	if respUpd["message"] != "successfully updated post" {
 		t.Fatal("want: successfully updated post, get: ", respUpd["message"])
 	}
-
-	// 4. Delete
+	// 4. Try to upd (another user)
+	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf(`/posts/%d`, postID), strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+jwt2)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatal("want: ", http.StatusOK, "got: ", w.Code, ", body: ", w.Body.String())
+	}
+	respInvalidUPD := decodeJSON[map[string]string](t, w)
+	if respInvalidUPD["message"] != "not permission" {
+		t.Fatal("want: not permission, get: ", respInvalidUPD["message"])
+	}
+	// 5. Try to delete (another user)
 	req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf(`/posts/%d`, postID), nil)
-	req.Header.Set("Authorization", "Bearer "+jwt)
+	req.Header.Set("Authorization", "Bearer "+jwt2)
+	w = httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatal("want: ", http.StatusForbidden, "got: ", w.Code, ", body: ", w.Body.String())
+	}
+	respInvalDelete := decodeJSON[map[string]string](t, w)
+	if respInvalDelete["message"] != "not permission" {
+		t.Fatal("want: not permission, get: ", respInvalDelete["message"])
+	}
+	// 6. Delete Success
+	req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf(`/posts/%d`, postID), nil)
+	req.Header.Set("Authorization", "Bearer "+jwt1)
 	w = httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
@@ -120,65 +148,3 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 		t.Fatal("want: ", http.StatusNoContent, "got: ", w.Code, ", body: ", w.Body.String())
 	}
 }
-
-func TestPostsFlow_NonOwnerCannotUpdate(t *testing.T) {
-	// 0. prepare
-	h, p := setupTest(t)
-	defer p.Close()
-	r := router.SetupRouter(h)
-	defer deletePost(t, p, "test_flow_3")
-	defer deleteTestUser(t, p, "maks1")
-	defer deleteTestUser(t, p, "maks2")
-	jwt1User, _ := fullCreateUser(t, p, "maks1")
-	jwt2User, _ := fullCreateUser(t, p, "maks2")
-	bodyCreate := `{
-	"title": "test_flow_3",
-	"content": "test3",
-	"category": "test3",
-	"tags": ["test3", "ng"]
-}`
-	bodyUpd := `{
-	"title": "test_flow_4",
-	"content": "test4",
-	"category": "test4",
-	"tags": ["test4", "me"]
-}`
-	// 1. Create
-	req := httptest.NewRequest(http.MethodPost, `/posts`, strings.NewReader(bodyCreate))
-	req.Header.Set("Authorization", "Bearer "+jwt1User)
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusCreated {
-		t.Fatal("want: ", http.StatusCreated, "got: ", w.Code, ", body: ", w.Body.String())
-	}
-	respCreate := decodeJSON[map[string]string](t, w)
-	if respCreate["message"] != "post created successfully" {
-		t.Fatal("want: post created successfully, get: ", respCreate["message"])
-	}
-	// 2. Get
-	req = httptest.NewRequest(http.MethodGet, "/posts?term=test_flow_3", nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Fatal("want: ", http.StatusOK, "got: ", w.Code, ", body: ", w.Body.String())
-	}
-	respGet := decodeJSON[map[string][]models.Post](t, w)
-	if respGet["posts"][0].Title != "test_flow_3" {
-		t.Fatal("want: test_flow_3, get: ", respGet["posts"][0].Title)
-	}
-
-	// 3. Update
-	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf(`/posts/%d`, respGet["posts"][0].ID), strings.NewReader(bodyUpd))
-	req.Header.Set("Authorization", "Bearer "+jwt2User)
-	req.Header.Set("Content-Type", "application/json")
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	if w.Code != http.StatusForbidden {
-		t.Fatal("want: ", http.StatusOK, "got: ", w.Code, ", body: ", w.Body.String())
-	}
-	respUpd := decodeJSON[map[string]string](t, w)
-	if respUpd["message"] != "not permission" {
-		t.Fatal("want: not permission, get: ", respUpd["message"])
-	}
-}git
