@@ -8,7 +8,7 @@ import (
 )
 
 func TestMe_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)
@@ -27,7 +27,7 @@ func TestMe_Success(t *testing.T) {
 }
 
 func TestMe_Unauthorized(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)
@@ -46,9 +46,8 @@ func TestMe_Unauthorized(t *testing.T) {
 }
 
 func TestMe_UserNotFound(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(-1)
 	if err != nil {
 		t.Fatal(err)

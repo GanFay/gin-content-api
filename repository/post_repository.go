@@ -86,7 +86,7 @@ func (r *PostRepository) Delete(ctx context.Context, id int, userID int) error {
 	return err
 }
 
-func (r *PostRepository) Update(ctx context.Context, id int, userID int, newBlog models.Blog) error {
+func (r *PostRepository) Update(ctx context.Context, id int, userID int, newBlog models.PostReq) error {
 	var post models.Post
 	err := r.db.QueryRow(ctx, `SELECT * FROM posts WHERE id=$1`, id).Scan(&post.ID, &post.AuthorID, &post.Title, &post.Content, &post.Category, &post.Tags, &post.CreatedAt, &post.UpdatedAt)
 	if err != nil {

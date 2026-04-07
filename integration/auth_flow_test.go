@@ -7,18 +7,23 @@ import (
 	"blog/router"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func setupTest(t *testing.T) (*handlers.Handler, *pgxpool.Pool) {
 	t.Helper()
-
-	dbURL := "postgres://app1:app@localhost:5432/db?sslmode=disable"
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+	dbURL := os.Getenv("DB_URL")
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		t.Fatal(err)
@@ -66,16 +71,16 @@ func TestAuthFlow_RegisterLoginMe(t *testing.T) {
 	h, p := setupTest(t)
 	defer p.Close()
 
-	deleteTestUser(t, p, "maks")
-	defer deleteTestUser(t, p, "maks")
+	deleteTestUser(t, p, "test")
+	defer deleteTestUser(t, p, "test")
 
 	r := router.SetupRouter(h)
 
 	// 1. Register
 	body := `{
-		"username": "maks",
-		"email": "maks@maks.com",
-		"password": "maksPassWord123"
+		"username": "test",
+		"email": "test123@test.com",
+		"password": "PassWord123"
 	}`
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/register", strings.NewReader(body))
@@ -95,8 +100,8 @@ func TestAuthFlow_RegisterLoginMe(t *testing.T) {
 
 	// 2. Login
 	body = `{
-		"username": "maks",
-		"password": "maksPassWord123"
+		"username": "test",
+		"password": "PassWord123"
 	}`
 
 	req = httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(body))
@@ -126,11 +131,11 @@ func TestAuthFlow_RegisterLoginMe(t *testing.T) {
 	}
 
 	respMe := decodeJSON[models.MeResponse](t, w)
-	if respMe.Username != "maks" {
-		t.Fatal("want: maks, got:", respMe.Username)
+	if respMe.Username != "test" {
+		t.Fatal("want: test, got:", respMe.Username)
 	}
-	if respMe.Email != "maks@maks.com" {
-		t.Fatal("want: maks@maks.com, got:", respMe.Email)
+	if respMe.Email != "test123@test.com" {
+		t.Fatal("want: test123@test.com, got:", respMe.Email)
 	}
 }
 
@@ -139,16 +144,16 @@ func TestAuthFlow_LoginRefreshMe(t *testing.T) {
 	h, p := setupTest(t)
 	defer p.Close()
 
-	deleteTestUser(t, p, "maks")
-	fullCreateUser(t, p, "maks")
-	defer deleteTestUser(t, p, "maks")
+	deleteTestUser(t, p, "test")
+	fullCreateUser(t, p, "test")
+	defer deleteTestUser(t, p, "test")
 
 	r := router.SetupRouter(h)
 
 	// 1.Login
 	body := `{
-			"username": "maks",
-			"password": "maksPassWord123"
+			"username": "test",
+			"password": "PassWord123"
 }`
 	req := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -198,8 +203,8 @@ func TestAuthFlow_LoginRefreshMe(t *testing.T) {
 		t.Fatal("want:", http.StatusOK, "got:", w.Code, "body:", w.Body.String())
 	}
 	rMe := decodeJSON[models.MeResponse](t, w)
-	if rMe.Username != "maks" {
-		t.Fatal("want: maks, got:", rMe.Username)
+	if rMe.Username != "test" {
+		t.Fatal("want: test, got:", rMe.Username)
 	}
 
 }
@@ -208,9 +213,9 @@ func TestAuthFlow_LogoutThenRefreshFails(t *testing.T) {
 	// 0.Prepare
 	h, p := setupTest(t)
 	defer p.Close()
-	deleteTestUser(t, p, "maks")
-	defer deleteTestUser(t, p, "maks")
-	_, refreshCookie := fullCreateUser(t, p, "maks")
+	deleteTestUser(t, p, "test")
+	defer deleteTestUser(t, p, "test")
+	_, refreshCookie := fullCreateUser(t, p, "test")
 	r := router.SetupRouter(h)
 
 	// 1.Logout

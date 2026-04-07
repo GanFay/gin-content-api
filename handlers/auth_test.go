@@ -7,8 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 type errorResponse struct {
@@ -24,10 +27,12 @@ type errorResponse struct {
 
 // TODO: optimize setupTest - don't create user for tests that don't need it
 
-func setupTest(t *testing.T) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
+func setupTest(t *testing.T, addUsr bool) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
 	t.Helper()
-
-	dbURL := "postgres://app1:app@localhost:5432/db?sslmode=disable"
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+	dbURL := os.Getenv("DB_URL")
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		t.Fatal(err)
@@ -39,20 +44,23 @@ func setupTest(t *testing.T) (*Handler, *gin.Engine, *pgxpool.Pool, int) {
 	h := NewHandler(postRep, userRep)
 	r := gin.Default()
 
-	pass, err := auth.HashPassword("testout123")
-	if err != nil {
-		t.Fatal(err.Error())
+	if addUsr {
+		pass, err := auth.HashPassword("testout123")
+		if err != nil {
+			t.Fatal(err.Error())
+		}
+
+		username := "test_logout"
+		email := "test_logout@gmail.com"
+
+		id, err := createTestUser(t, h, username, email, pass)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return h, r, pool, id
 	}
 
-	username := "test_logout"
-	email := "test_logout@gmail.com"
-
-	id, err := createTestUser(t, h, username, email, pass)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return h, r, pool, id
+	return h, r, pool, -1
 }
 
 func performJSONRequest(r http.Handler, method, path, body string) *httptest.ResponseRecorder {
@@ -98,9 +106,8 @@ func deleteTestUser(t *testing.T, pool *pgxpool.Pool, id int) {
 }
 
 func TestRegister_Validation(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 
 	r.POST("/auth/register", h.Register)
 
@@ -204,8 +211,7 @@ func TestRegister_Validation(t *testing.T) {
 }
 
 func TestRegister_UserAlreadyExists(t *testing.T) {
-	h, r, pool, id := setupTest(t)
-	deleteTestUser(t, pool, id)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
 
 	username := "test_reg_exists"
@@ -217,7 +223,7 @@ func TestRegister_UserAlreadyExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	id, err = createTestUser(t, h, username, email, passwordHash)
+	id, err := createTestUser(t, h, username, email, passwordHash)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -245,9 +251,8 @@ func TestRegister_UserAlreadyExists(t *testing.T) {
 }
 
 func TestRegister_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 
 	r.POST("/auth/register", h.Register)
 
@@ -276,7 +281,7 @@ func TestRegister_Success(t *testing.T) {
 }
 
 func TestLogin_Validation(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 
 	defer deleteTestUser(t, pool, id)
@@ -336,7 +341,7 @@ func TestLogin_Validation(t *testing.T) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 
 	defer deleteTestUser(t, pool, id)
@@ -389,8 +394,7 @@ func TestLogin_Success(t *testing.T) {
 }
 
 func TestLogin_Invalid(t *testing.T) {
-	h, r, pool, id := setupTest(t)
-	deleteTestUser(t, pool, id)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
 
 	r.POST("/auth/login", h.Login)
@@ -408,7 +412,7 @@ func TestLogin_Invalid(t *testing.T) {
 }
 
 func TestLogout_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 
@@ -460,7 +464,7 @@ func TestLogout_Success(t *testing.T) {
 }
 
 func TestRefresh_NoCookie(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 
@@ -481,7 +485,7 @@ func TestRefresh_NoCookie(t *testing.T) {
 }
 
 func TestRefresh_InvalidToken(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	r.POST("/auth/refresh", h.Refresh)
@@ -502,7 +506,7 @@ func TestRefresh_InvalidToken(t *testing.T) {
 }
 
 func TestRefresh_ExpiredToken(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	jwtFunc := func() (string, error) {
@@ -542,9 +546,8 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 }
 
 func TestRefresh_UserID_NotFound(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 	jwtFunc := func() (string, error) {
 		claims := jwt.MapClaims{
 			"exp": time.Now().Add(15 * time.Minute).Unix(),
@@ -579,7 +582,7 @@ func TestRefresh_UserID_NotFound(t *testing.T) {
 }
 
 func TestRefresh_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	refJWT, err := auth.GenerateRefreshJWT(id)

@@ -55,7 +55,7 @@ func deletePostsH(t *testing.T, pool *pgxpool.Pool, IDs []int) {
 }
 
 func TestCreateBlog_Validation(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)
@@ -149,7 +149,7 @@ func TestCreateBlog_Validation(t *testing.T) {
 }
 
 func TestCreateBlog_Success(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, id := setupTest(t, true)
 	defer pool.Close()
 	defer deleteTestUser(t, pool, id)
 	jwt, err := auth.GenerateAccessJWT(id)

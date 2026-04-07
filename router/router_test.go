@@ -7,17 +7,24 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func setupTest(t *testing.T) (*handlers.Handler, *pgxpool.Pool) {
 	t.Helper()
 
-	dbURL := "postgres://app1:app@localhost:5432/db?sslmode=disable"
+	err := godotenv.Load("../.env")
+	if err != nil {
+		t.Fatal("Error loading .env file")
+	}
+
+	dbURL := os.Getenv("DB_URL")
 	pool, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		t.Fatal(err)

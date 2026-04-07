@@ -11,7 +11,7 @@ import (
 )
 
 func TestUpdatePosts_Valid(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	IDs, err := createBlogH(t, p, id, 3)
@@ -140,7 +140,7 @@ func TestUpdatePosts_Valid(t *testing.T) {
 }
 
 func TestUpdateBlog_NotOwner(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	IDs, err := createBlogH(t, p, id, 1)

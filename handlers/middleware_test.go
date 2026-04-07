@@ -14,8 +14,7 @@ import (
 var MuserID = 5
 
 func TestAuthMiddleware_MissingHeader(t *testing.T) {
-	h, r, pool, id := setupTest(t)
-	deleteTestUser(t, pool, id)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
 	r.GET("/ping", h.AuthMiddleware(), h.Ping)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
@@ -26,9 +25,8 @@ func TestAuthMiddleware_MissingHeader(t *testing.T) {
 	}
 }
 func TestAuthMiddleware_InvalidHeaderFormat(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 	r.GET("/ping", h.AuthMiddleware(), h.Ping)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 	BearerToken, err := auth.GenerateAccessJWT(MuserID)
@@ -48,8 +46,7 @@ func TestAuthMiddleware_InvalidHeaderFormat(t *testing.T) {
 }
 
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
-	h, r, pool, id := setupTest(t)
-	deleteTestUser(t, pool, id)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
 	r.GET("/ping", h.AuthMiddleware(), h.Ping)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
@@ -66,9 +63,8 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 }
 
 func TestAuthMiddleware_ExpiredToken(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 	r.GET("/ping", h.AuthMiddleware(), h.Ping)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 
@@ -101,8 +97,7 @@ func TestAuthMiddleware_ExpiredToken(t *testing.T) {
 }
 
 func TestAuthMiddleware_ValidToken(t *testing.T) {
-	h, r, pool, id := setupTest(t)
-	deleteTestUser(t, pool, id)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
 	r.GET("/ping", h.AuthMiddleware(), h.Ping)
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
@@ -119,9 +114,8 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 }
 
 func TestAuthMiddleware_SetsUserIDInContext(t *testing.T) {
-	h, r, pool, id := setupTest(t)
+	h, r, pool, _ := setupTest(t, false)
 	defer pool.Close()
-	deleteTestUser(t, pool, id)
 	r.GET("/check", h.AuthMiddleware(), func(c *gin.Context) {
 		value, exists := c.Get("user_id")
 		if !exists {

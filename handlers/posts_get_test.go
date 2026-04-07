@@ -12,9 +12,9 @@ import (
 )
 
 func TestGetAllPosts_Validation(t *testing.T) {
-	_, _, p, id := setupTest(t)
+	_, _, p, id := setupTest(t, true)
 	defer p.Close()
-	deleteTestUser(t, p, id)
+	defer deleteTestUser(t, p, id)
 	jwt, err := auth.GenerateAccessJWT(id)
 	if err != nil {
 		t.Fatal(err.Error())
@@ -116,8 +116,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 	}
 	for _, testCase := range testTable {
 		t.Run(testCase.name, func(t *testing.T) {
-			h, r, _, id := setupTest(t)
-			defer deleteTestUser(t, p, id)
+			h, r, _, _ := setupTest(t, false)
 			testCase.req(r, h)
 			w := httptest.NewRecorder()
 			if testCase.auth {
@@ -139,7 +138,7 @@ func TestGetAllPosts_Validation(t *testing.T) {
 }
 
 func TestGetAll_DefPagination(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	r.GET(`/posts`, h.AuthMiddleware(), h.GetPosts)
@@ -166,7 +165,7 @@ func TestGetAll_DefPagination(t *testing.T) {
 }
 
 func TestByID_Success(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	r.GET(`/posts/:id`, h.AuthMiddleware(), h.GetByID)

@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Blog struct {
+type PostReq struct {
 	Title    string   `json:"title"`
 	Content  string   `json:"content"`
 	Category string   `json:"category"`

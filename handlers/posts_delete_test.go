@@ -10,7 +10,7 @@ import (
 )
 
 func TestDeletePost(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	IDs, err := createBlogH(t, p, id, 2)
@@ -88,7 +88,7 @@ func TestDeletePost(t *testing.T) {
 }
 
 func TestDeletePost_NoAuthor(t *testing.T) {
-	h, r, p, id := setupTest(t)
+	h, r, p, id := setupTest(t, true)
 	defer p.Close()
 	defer deleteTestUser(t, p, id)
 	IDs, err := createBlogH(t, p, id, 1)

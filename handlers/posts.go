@@ -15,7 +15,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param input body models.Blog true "Blog data"
+// @Param input body models.PostReq true "Blog data"
 // @Success 201 {object} map[string]string "Post created successfully"
 // @Failure 400 {object} map[string]string "Invalid request body"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -23,7 +23,7 @@ import (
 // @Router /posts [post]
 func (h *Handler) CreatePost(c *gin.Context) {
 	ctx := c.Request.Context()
-	var newBlog models.Blog
+	var newBlog models.PostReq
 	err := c.ShouldBindJSON(&newBlog)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON can't unmarshal body"})
@@ -169,7 +169,7 @@ func (h *Handler) DeletePost(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Post ID"
-// @Param input body models.Blog true "Updated blog data"
+// @Param input body models.PostReq true "Updated blog data"
 // @Success 200 {object} map[string]string "Post updated successfully"
 // @Failure 400 {object} map[string]string "Invalid input or update failed"
 // @Failure 401 {object} map[string]string "Unauthorized or no permission"
@@ -187,7 +187,7 @@ func (h *Handler) UpdatePost(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id " + idStr})
 		return
 	}
-	var newBlog models.Blog
+	var newBlog models.PostReq
 	err = c.ShouldBindJSON(&newBlog)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

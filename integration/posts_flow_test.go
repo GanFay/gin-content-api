@@ -25,12 +25,12 @@ func deletePost(t *testing.T, p *pgxpool.Pool, post string) {
 
 func fullCreateUser(t *testing.T, p *pgxpool.Pool, username string) (accJWT string, refJWT string) {
 	t.Helper()
-	HP, err := auth.HashPassword("maksPassWord123")
+	HP, err := auth.HashPassword("PassWord123")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 	randNum := rand.Int()
-	id, err := createTestUser(t, p, username, fmt.Sprintf("maks%d@maks.com", randNum), HP)
+	id, err := createTestUser(t, p, username, fmt.Sprintf("test%d@.com", randNum), HP)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -50,12 +50,12 @@ func TestPostsFlow_CreateGetUpdateDelete(t *testing.T) {
 	h, p := setupTest(t)
 	defer p.Close()
 	r := router.SetupRouter(h)
-	deleteTestUser(t, p, "maks1")
-	deleteTestUser(t, p, "maks2")
-	jwt1, _ := fullCreateUser(t, p, "maks1")
-	jwt2, _ := fullCreateUser(t, p, "maks2")
-	defer deleteTestUser(t, p, "maks1")
-	defer deleteTestUser(t, p, "maks2")
+	deleteTestUser(t, p, "test1")
+	deleteTestUser(t, p, "test2")
+	jwt1, _ := fullCreateUser(t, p, "test1")
+	jwt2, _ := fullCreateUser(t, p, "test2")
+	defer deleteTestUser(t, p, "test1")
+	defer deleteTestUser(t, p, "test2")
 	deletePost(t, p, "test_flow_1")
 	deletePost(t, p, "test_flow_2")
 
