@@ -18,7 +18,6 @@ run-app:
 
 dev:
 	docker compose up -d postgres
-	@echo "Waiting for postgres..."
-	@timeout /t 5 > NUL
+	@sleep 5
 	make migrations-up
-	go run main.go
+	docker compose up -d api

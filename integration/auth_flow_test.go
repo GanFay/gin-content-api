@@ -130,12 +130,12 @@ func TestAuthFlow_RegisterLoginMe(t *testing.T) {
 		t.Fatal("want:", http.StatusOK, "got:", w.Code, "body:", w.Body.String())
 	}
 
-	respMe := decodeJSON[models.MeResponse](t, w)
-	if respMe.Username != "test" {
-		t.Fatal("want: test, got:", respMe.Username)
+	respMe := decodeJSON[map[string]models.MeResponse](t, w)
+	if respMe["user"].Username != "test" {
+		t.Fatal("want: test, got:", respMe)
 	}
-	if respMe.Email != "test123@test.com" {
-		t.Fatal("want: test123@test.com, got:", respMe.Email)
+	if respMe["user"].Email != "test123@test.com" {
+		t.Fatal("want: test123@test.com, got:", respMe)
 	}
 }
 
@@ -202,9 +202,9 @@ func TestAuthFlow_LoginRefreshMe(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatal("want:", http.StatusOK, "got:", w.Code, "body:", w.Body.String())
 	}
-	rMe := decodeJSON[models.MeResponse](t, w)
-	if rMe.Username != "test" {
-		t.Fatal("want: test, got:", rMe.Username)
+	rMe := decodeJSON[map[string]models.MeResponse](t, w)
+	if rMe["user"].Username != "test" {
+		t.Fatal("want: test, got:", rMe)
 	}
 
 }

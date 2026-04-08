@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"blog/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} info "User information"
+// @Success 200 {object} models.MeResponse "User information"
 // @Failure 400 {object} map[string]string "Database error"
 // @Router /users/me [get]
 func (h *Handler) Me(c *gin.Context) {
@@ -25,7 +26,7 @@ func (h *Handler) Me(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(200, gin.H{"id": req.ID, "username": req.Username, "email": req.Email})
+	mResp := models.MeResponse{ID: req.ID, Email: req.Email, Username: req.Username}
+	c.JSON(200, gin.H{"user": mResp})
 
 }

@@ -13,15 +13,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// @title Blogging Platform API
-// @version 1.0
-// @description REST API for a blogging platform built with Go, Gin, PostgreSQL, JWT auth, refresh tokens and ownership protection.
-// @host localhost:8080
-// @BasePath /
+// @title           Gin Content API
+// @version         1.0
+// @description     A robust, production-ready RESTful API designed for content management.
+// @host            localhost:8080
+// @BasePath        /
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
+// @description Type "Bearer" followed by a space and your JWT token.
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Println("No .env file found, using environment variables")

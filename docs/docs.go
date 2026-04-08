@@ -142,7 +142,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Creates a new user account with username, email and password",
+                "description": "Create a new user account with username, email, and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -150,12 +150,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
-                "summary": "Register user",
+                "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "Register data",
+                        "description": "User registration data",
                         "name": "input",
                         "in": "body",
                         "required": true,
@@ -166,7 +166,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "User registered successfully",
+                        "description": "message: user created successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -175,7 +175,25 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Validation error or insert error",
+                        "description": "error: invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "error: user already exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error: internal server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -188,17 +206,17 @@ const docTemplate = `{
         },
         "/ping": {
             "get": {
-                "description": "Check if server is running",
+                "description": "Check if the server is running",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "utility"
+                    "System"
                 ],
-                "summary": "Ping server",
+                "summary": "Health check",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "message: pong",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -296,7 +314,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Blog"
+                            "$ref": "#/definitions/models.PostReq"
                         }
                     }
                 ],
@@ -412,7 +430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Blog"
+                            "$ref": "#/definitions/models.PostReq"
                         }
                     }
                 ],
@@ -534,7 +552,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User information",
                         "schema": {
-                            "$ref": "#/definitions/handlers.info"
+                            "$ref": "#/definitions/models.MeResponse"
                         }
                     },
                     "400": {
@@ -551,7 +569,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.info": {
+        "models.Login": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MeResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -565,7 +594,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Blog": {
+        "models.PostReq": {
             "type": "object",
             "properties": {
                 "category": {
@@ -581,17 +610,6 @@ const docTemplate = `{
                     }
                 },
                 "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Login": {
-            "type": "object",
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
                     "type": "string"
                 }
             }
@@ -618,6 +636,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and your JWT token.",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
@@ -631,8 +650,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "Blogging Platform API",
-	Description:      "REST API for a blogging platform built with Go, Gin, PostgreSQL, JWT auth, refresh tokens and ownership protection.",
+	Title:            "Gin Content API",
+	Description:      "A robust, production-ready RESTful API designed for content management.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

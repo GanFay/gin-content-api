@@ -77,16 +77,18 @@ func (h *Handler) Login(c *gin.Context) {
 	})
 }
 
-// Register godoc
-// @Summary Register user
-// @Description Creates a new user account with username, email and password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param input body models.RegisterRequest true "Register data"
-// @Success 201 {object} map[string]string "User registered successfully"
-// @Failure 400 {object} map[string]string "Validation error or insert error"
-// @Router /auth/register [post]
+// Register
+// @Summary      Register a new user
+// @Description  Create a new user account with username, email, and password
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        input  body      models.RegisterRequest  true  "User registration data"
+// @Success      201    {object}  map[string]string "message: user created successfully"
+// @Failure      400    {object}  map[string]string "error: invalid input"
+// @Failure      409    {object}  map[string]string "error: user already exists"
+// @Failure      500    {object}  map[string]string "error: internal server error"
+// @Router       /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req models.RegisterRequest

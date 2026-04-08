@@ -1,6 +1,13 @@
 basePath: /
 definitions:
-  handlers.info:
+  models.Login:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  models.MeResponse:
     properties:
       email:
         type: string
@@ -9,7 +16,7 @@ definitions:
       username:
         type: string
     type: object
-  models.Blog:
+  models.PostReq:
     properties:
       category:
         type: string
@@ -20,13 +27,6 @@ definitions:
           type: string
         type: array
       title:
-        type: string
-    type: object
-  models.Login:
-    properties:
-      password:
-        type: string
-      username:
         type: string
     type: object
   models.RegisterRequest:
@@ -45,9 +45,8 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: REST API for a blogging platform built with Go, Gin, PostgreSQL, JWT
-    auth, refresh tokens and ownership protection.
-  title: Blogging Platform API
+  description: A robust, production-ready RESTful API designed for content management.
+  title: Gin Content API
   version: "1.0"
 paths:
   /auth/login:
@@ -138,9 +137,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new user account with username, email and password
+      description: Create a new user account with username, email, and password
       parameters:
-      - description: Register data
+      - description: User registration data
         in: body
         name: input
         required: true
@@ -150,35 +149,47 @@ paths:
       - application/json
       responses:
         "201":
-          description: User registered successfully
+          description: 'message: user created successfully'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Validation error or insert error
+          description: 'error: invalid input'
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Register user
+        "409":
+          description: 'error: user already exists'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: 'error: internal server error'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
       tags:
-      - auth
+      - Auth
   /ping:
     get:
-      description: Check if server is running
+      description: Check if the server is running
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 'message: pong'
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Ping server
+      summary: Health check
       tags:
-      - utility
+      - System
   /posts:
     get:
       consumes:
@@ -232,7 +243,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/models.Blog'
+          $ref: '#/definitions/models.PostReq'
       produces:
       - application/json
       responses:
@@ -350,7 +361,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/models.Blog'
+          $ref: '#/definitions/models.PostReq'
       produces:
       - application/json
       responses:
@@ -388,7 +399,7 @@ paths:
         "200":
           description: User information
           schema:
-            $ref: '#/definitions/handlers.info'
+            $ref: '#/definitions/models.MeResponse'
         "400":
           description: Database error
           schema:
@@ -402,6 +413,7 @@ paths:
       - users
 securityDefinitions:
   BearerAuth:
+    description: Type "Bearer" followed by a space and your JWT token.
     in: header
     name: Authorization
     type: apiKey
