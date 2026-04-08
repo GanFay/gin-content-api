@@ -247,3 +247,5 @@ The schema is strictly managed via the `/migrations` directory.
 ## 📜 License
 
 This project is licensed under the MIT License.
+
+test
